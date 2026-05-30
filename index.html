@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Number Guesser - Draw & Guess!</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0f0f1a;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        header h1 {
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: -1px;
+            background: linear-gradient(135deg, #a78bfa, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        header p {
+            margin-top: 8px;
+            color: #94a3b8;
+            font-size: 1.05rem;
+        }
+
+        #load-btn {
+            background: linear-gradient(135deg, #7c3aed, #2563eb);
+            color: #fff;
+            border: none;
+            padding: 14px 36px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            margin-bottom: 36px;
+            box-shadow: 0 4px 24px rgba(124, 58, 237, 0.4);
+        }
+
+        #load-btn:hover { opacity: 0.88; transform: scale(1.03); }
+        #load-btn:active { transform: scale(0.97); }
+        #load-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+        #status {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            min-height: 20px;
+        }
+
+        .main-area {
+            display: flex;
+            gap: 40px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* ---- Drawing panel ---- */
+        .draw-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .draw-panel h2 {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #a78bfa;
+        }
+
+        #draw-canvas {
+            width: 320px;
+            height: 320px;
+            border-radius: 16px;
+            border: 2px solid #3b3b5c;
+            background: #1a1a2e;
+            cursor: crosshair;
+            display: block;
+            touch-action: none;
+            box-shadow: 0 0 40px rgba(167, 139, 250, 0.15);
+            transition: border-color 0.3s;
+        }
+
+        #draw-canvas:hover {
+            border-color: #7c3aed;
+        }
+
+        .draw-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-secondary {
+            background: #1e1e3a;
+            color: #cbd5e1;
+            border: 1px solid #3b3b5c;
+            padding: 9px 22px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #2a2a4a;
+            border-color: #7c3aed;
+            color: #fff;
+        }
+
+        .stroke-size {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        .stroke-size input[type=range] {
+            accent-color: #7c3aed;
+            width: 80px;
+        }
+
+        /* ---- Guess panel ---- */
+        .guess-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            min-width: 260px;
+        }
+
+        .guess-panel h2 {
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #60a5fa;
+        }
+
+        .big-guess {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e1e3a, #0f0f1a);
+            border: 3px solid #3b3b5c;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 40px rgba(96, 165, 250, 0.15);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .big-guess.active {
+            border-color: #60a5fa;
+            box-shadow: 0 0 50px rgba(96, 165, 250, 0.35);
+        }
+
+        .big-guess .guess-number {
+            font-size: 4.5rem;
+            font-weight: 900;
+            line-height: 1;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .big-guess .guess-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+
+        /* Probability bars */
+        .bars {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bar-label {
+            width: 18px;
+            text-align: right;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #94a3b8;
+            flex-shrink: 0;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 10px;
+            background: #1e1e3a;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 5px;
+            background: linear-gradient(90deg, #7c3aed, #60a5fa);
+            transition: width 0.15s ease-out;
+            width: 0%;
+        }
+
+        .bar-fill.top {
+            background: linear-gradient(90deg, #a78bfa, #34d399);
+        }
+
+        .bar-pct {
+            width: 36px;
+            text-align: right;
+            font-size: 0.75rem;
+            color: #64748b;
+            flex-shrink: 0;
+        }
+
+        /* Confidence badge */
+        .confidence {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+
+        .confidence span {
+            color: #34d399;
+            font-weight: 700;
+        }
+
+        /* not-loaded overlay */
+        #not-loaded-msg {
+            color: #475569;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        footer {
+            margin-top: 50px;
+            color: #334155;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>&#x1F522; Number Guesser</h1>
+        <p>Draw a digit (0–9) and watch the AI guess in real time!</p>
+    </header>
+
+    <button id="load-btn" onclick="loadModel()">Load Model &amp; Start</button>
+    <div id="status">Click the button to load the AI model.</div>
+
+    <div class="main-area">
+        <!-- Drawing Canvas -->
+        <div class="draw-panel">
+            <h2>Draw Here</h2>
+            <canvas id="draw-canvas" width="320" height="320"></canvas>
+            <div class="draw-controls">
+                <button class="btn-secondary" onclick="clearCanvas()">Clear</button>
+                <div class="stroke-size">
+                    <span>Brush</span>
+                    <input type="range" id="brush-size" min="8" max="40" value="20">
+                </div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:6px;">
+                <span style="font-size:0.75rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;">Model sees (28×28)</span>
+                <canvas id="preview-canvas" width="28" height="28" style="width:84px;height:84px;border-radius:8px;border:1px solid #3b3b5c;image-rendering:pixelated;background:#000;"></canvas>
+            </div>
+        </div>
+
+        <!-- Guess Panel -->
+        <div class="guess-panel">
+            <h2>AI Guess</h2>
+            <div class="big-guess" id="big-guess">
+                <div class="guess-number" id="top-guess">?</div>
+                <div class="guess-label">best guess</div>
+            </div>
+            <div class="confidence" id="confidence-text">confidence: <span>—</span></div>
+            <div class="bars" id="bars-container">
+                <div id="not-loaded-msg">Load the model to see predictions</div>
+            </div>
+        </div>
+    </div>
+
+    <footer>Powered by TensorFlow.js &amp; Teachable Machine</footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script>
+        const MODEL_URL = "https://teachablemachine.withgoogle.com/models/z8Afdcd7N/";
+
+        let model = null;
+        let maxPredictions = 0;
+        let predicting = false;
+        let animFrame = null;
+
+        // ---- Canvas drawing setup ----
+        const canvas = document.getElementById("draw-canvas");
+        const ctx = canvas.getContext("2d");
+        let isDrawing = false;
+        let lastX = 0, lastY = 0;
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            if (e.touches) {
+                return {
+                    x: (e.touches[0].clientX - rect.left) * scaleX,
+                    y: (e.touches[0].clientY - rect.top) * scaleY
+                };
+            }
+            return {
+                x: (e.clientX - rect.left) * scaleX,
+                y: (e.clientY - rect.top) * scaleY
+            };
+        }
+
+        canvas.addEventListener("mousedown", e => {
+            isDrawing = true;
+            const p = getPos(e);
+            lastX = p.x; lastY = p.y;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, brushRadius(), 0, Math.PI * 2);
+            ctx.fillStyle = "#fff";
+            ctx.fill();
+        });
+
+        canvas.addEventListener("mousemove", e => {
+            if (!isDrawing) return;
+            const p = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(p.x, p.y);
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = brushRadius() * 2;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.stroke();
+            lastX = p.x; lastY = p.y;
+        });
+
+        canvas.addEventListener("mouseup", () => isDrawing = false);
+        canvas.addEventListener("mouseleave", () => isDrawing = false);
+
+        canvas.addEventListener("touchstart", e => {
+            e.preventDefault();
+            isDrawing = true;
+            const p = getPos(e);
+            lastX = p.x; lastY = p.y;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, brushRadius(), 0, Math.PI * 2);
+            ctx.fillStyle = "#fff";
+            ctx.fill();
+        }, { passive: false });
+
+        canvas.addEventListener("touchmove", e => {
+            e.preventDefault();
+            if (!isDrawing) return;
+            const p = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(p.x, p.y);
+            ctx.strokeStyle = "#fff";
+            ctx.lineWidth = brushRadius() * 2;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.stroke();
+            lastX = p.x; lastY = p.y;
+        }, { passive: false });
+
+        canvas.addEventListener("touchend", () => isDrawing = false);
+
+        function brushRadius() {
+            return parseInt(document.getElementById("brush-size").value) / 2;
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // ---- Model loading ----
+        async function loadModel() {
+            const btn = document.getElementById("load-btn");
+            const status = document.getElementById("status");
+            btn.disabled = true;
+            status.textContent = "Loading model...";
+
+            try {
+                model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+                maxPredictions = model.getTotalClasses();
+                buildBars();
+                status.textContent = "Model loaded! Start drawing a number.";
+                document.getElementById("big-guess").classList.add("active");
+                startPredictionLoop();
+                btn.style.display = "none";
+            } catch (err) {
+                status.textContent = "Failed to load model. Make sure ./my_model/ exists.";
+                console.error(err);
+                btn.disabled = false;
+            }
+        }
+
+        // ---- Build probability bars ----
+        function buildBars() {
+            const container = document.getElementById("bars-container");
+            container.innerHTML = "";
+            for (let i = 0; i < maxPredictions; i++) {
+                const row = document.createElement("div");
+                row.className = "bar-row";
+                row.innerHTML = `
+                    <div class="bar-label" id="bar-label-${i}">?</div>
+                    <div class="bar-track">
+                        <div class="bar-fill" id="bar-fill-${i}"></div>
+                    </div>
+                    <div class="bar-pct" id="bar-pct-${i}">0%</div>
+                `;
+                container.appendChild(row);
+            }
+        }
+
+        // ---- Prediction loop ----
+        function startPredictionLoop() {
+            async function loop() {
+                if (model) await predict();
+                animFrame = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        // Crop tightly to drawn content, center it, then scale to 28x28 (like MNIST)
+        function getScaledCanvas() {
+            const small = document.createElement("canvas");
+            small.width = 28;
+            small.height = 28;
+            const sCtx = small.getContext("2d");
+            sCtx.fillStyle = "black";
+            sCtx.fillRect(0, 0, 28, 28);
+
+            // Find bounding box of drawn pixels
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const d = imageData.data;
+            let minX = canvas.width, maxX = 0, minY = canvas.height, maxY = 0;
+            for (let y = 0; y < canvas.height; y++) {
+                for (let x = 0; x < canvas.width; x++) {
+                    const i = (y * canvas.width + x) * 4;
+                    if (d[i] > 20 || d[i+1] > 20 || d[i+2] > 20) {
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+
+            // Nothing drawn — return blank
+            if (minX >= maxX || minY >= maxY) {
+                // Update preview
+                const prev = document.getElementById("preview-canvas");
+                if (prev) prev.getContext("2d").clearRect(0, 0, 28, 28);
+                return small;
+            }
+
+            // Add ~10% padding, then make the crop square
+            const pw = Math.round((maxX - minX) * 0.15);
+            const ph = Math.round((maxY - minY) * 0.15);
+            minX = Math.max(0, minX - pw);
+            maxX = Math.min(canvas.width - 1, maxX + pw);
+            minY = Math.max(0, minY - ph);
+            maxY = Math.min(canvas.height - 1, maxY + ph);
+
+            const w = maxX - minX;
+            const h = maxY - minY;
+            const size = Math.max(w, h);
+            const cx = (minX + maxX) / 2;
+            const cy = (minY + maxY) / 2;
+            const sx = Math.max(0, cx - size / 2);
+            const sy = Math.max(0, cy - size / 2);
+            const sw = Math.min(canvas.width - sx, size);
+            const sh = Math.min(canvas.height - sy, size);
+
+            sCtx.drawImage(canvas, sx, sy, sw, sh, 0, 0, 28, 28);
+
+            // Mirror to preview
+            const prev = document.getElementById("preview-canvas");
+            if (prev) {
+                const pCtx = prev.getContext("2d");
+                pCtx.fillStyle = "black";
+                pCtx.fillRect(0, 0, 28, 28);
+                pCtx.drawImage(small, 0, 0);
+            }
+
+            return small;
+        }
+
+        async function predict() {
+            const prediction = await model.predict(getScaledCanvas());
+
+            // Find top prediction
+            let topIdx = 0;
+            for (let i = 1; i < prediction.length; i++) {
+                if (prediction[i].probability > prediction[topIdx].probability) topIdx = i;
+            }
+
+            // Update big guess
+            document.getElementById("top-guess").textContent = prediction[topIdx].className;
+            const confPct = (prediction[topIdx].probability * 100).toFixed(1);
+            document.getElementById("confidence-text").innerHTML =
+                `confidence: <span>${confPct}%</span>`;
+
+            // Update bars
+            for (let i = 0; i < prediction.length; i++) {
+                const pct = (prediction[i].probability * 100).toFixed(1);
+                const fill = document.getElementById(`bar-fill-${i}`);
+                const label = document.getElementById(`bar-label-${i}`);
+                const pctEl = document.getElementById(`bar-pct-${i}`);
+                if (fill && label && pctEl) {
+                    label.textContent = prediction[i].className;
+                    fill.style.width = pct + "%";
+                    fill.className = "bar-fill" + (i === topIdx ? " top" : "");
+                    pctEl.textContent = pct + "%";
+                }
+            }
+        }
+    </script>
+</body>
+</html>
